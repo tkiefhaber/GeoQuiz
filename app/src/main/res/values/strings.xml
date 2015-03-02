@@ -14,4 +14,9 @@
     <string name="incorrect_text">INCORRECT!</string>
     <string name="action_settings">Settings</string>
     <string name="previous_button">Previous</string>
+    <string name="warning_text">Are you sure you want to cheat?</string>
+    <string name="show_answer_button">Show Answer</string>
+    <string name="cheat_button">Cheat!</string>
+    <string name="judgement_toast">Cheating is wrong, but if you\'re not cheating, you\'re not trying.</string>
+    <string name="title_activity_cheat">CheatActivity</string>
 </resources>

@@ -1,5 +1,9 @@
 package com.example.tomk.geoquiz;
 
+import android.app.Activity;
+import android.app.ActivityOptions;
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -15,12 +19,16 @@ public class QuizActivity extends ActionBarActivity {
 
     private static final String TAG = "QuizActivity";
     private static final String KEY_INDEX = "index";
+    private static final int REQUEST_CODE_CHEAT = 0;
 
     private Button mTrueButton;
     private Button mFalseButton;
     private Button mNextButton;
     private Button mPreviousButton;
+    private Button mCheatButton;
     private TextView mQuestionTextView;
+    private TextView mBuildVersion;
+
 
     private Question[] mQuestionBank = new Question[] {
         new Question(R.string.question_oceans, true),
@@ -31,6 +39,20 @@ public class QuizActivity extends ActionBarActivity {
     };
 
     private int mCurrentIndex = 0;
+    private boolean mIsCheater;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(resultCode != Activity.RESULT_OK) {
+            return;
+        }
+        if(requestCode == REQUEST_CODE_CHEAT) {
+            if(data == null) {
+                return;
+            }
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+        }
+    }
 
     private void updateQuestion() {
         int question = mQuestionBank[mCurrentIndex].getTextResId();
@@ -40,10 +62,14 @@ public class QuizActivity extends ActionBarActivity {
     private void checkAnswer(boolean userPressedTrue) {
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
         int messageResId = 0;
-        if(userPressedTrue == answerIsTrue) {
-            messageResId = R.string.correct_text;
+        if(mIsCheater) {
+            messageResId = R.string.judgement_toast;
         } else {
-            messageResId = R.string.incorrect_text;
+            if (userPressedTrue == answerIsTrue) {
+                messageResId = R.string.correct_text;
+            } else {
+                messageResId = R.string.incorrect_text;
+            }
         }
 
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
@@ -97,7 +123,7 @@ public class QuizActivity extends ActionBarActivity {
         mTrueButton = (Button) findViewById(R.id.true_button);
         mFalseButton = (Button) findViewById(R.id.false_button);
 
-        mQuestionTextView = (TextView)findViewById(R.id.question_text_view);
+        mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
         updateQuestion();
 
         mTrueButton.setOnClickListener(new View.OnClickListener() {
@@ -114,16 +140,17 @@ public class QuizActivity extends ActionBarActivity {
             }
         });
 
-        mNextButton = (Button)findViewById(R.id.next_button);
+        mNextButton = (Button) findViewById(R.id.next_button);
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                mIsCheater = false;
                 updateQuestion();
             }
         });
 
-        mPreviousButton = (Button)findViewById(R.id.previous_button);
+        mPreviousButton = (Button) findViewById(R.id.previous_button);
         mPreviousButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -132,9 +159,32 @@ public class QuizActivity extends ActionBarActivity {
                 } else {
                     mCurrentIndex = (mCurrentIndex - 1) % mQuestionBank.length;
                 }
+                mIsCheater = false;
                 updateQuestion();
             }
         });
+
+        mCheatButton = (Button) findViewById(R.id.cheat_button);
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
+                Intent i = CheatActivity.newIntent(QuizActivity.this, answerIsTrue);
+                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    Bundle options = ActivityOptions.makeCustomAnimation(
+                            QuizActivity.this,
+                            android.R.anim.slide_in_left,
+                            android.R.anim.slide_out_right
+                    ).toBundle();
+                    startActivityForResult(i, REQUEST_CODE_CHEAT, options);
+                } else {
+                    startActivityForResult(i, REQUEST_CODE_CHEAT);
+                }
+            }
+        });
+
+        mBuildVersion = (TextView)findViewById(R.id.build_version);
+        mBuildVersion.setText("API VERSION " + Build.VERSION.SDK_INT);
 
 
     }
